@@ -1,2 +1,2 @@
 # arc-model
-my solution to the arc-agi challenge
+solution to the arc-agi challenge
