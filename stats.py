@@ -30,7 +30,7 @@ def find_number_of_tasks():
 
 
 def get_grid_size(grid):
-    return len(grid) * len(grid[0])
+    return (len(grid) * len(grid[0]), (len(grid), len(grid[0])) )
 
 
 def find_max_min_grid(path):
@@ -99,8 +99,10 @@ def draw_matrix(matrix):
         3: 'green',
         4: 'yellow',
         5: 'purple',
-        6: 'pink',
-        7: 'orange'
+        6: 'magenta',
+        7: 'orange',
+        8: 'cyan', #blue-light
+        9: 'maroon'
     }
 
     fig, ax = plt.subplots()
@@ -141,16 +143,22 @@ def find_avg_number_examples():
 
 def draw_test():
     # example "025d127b" test set
-    return [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 4, 4, 4, 4, 4, 4, 0, 0, 0],
-            [0, 4, 0, 0, 0, 0, 0, 4, 0, 0],
-            [0, 0, 4, 0, 0, 0, 0, 0, 4, 0],
-            [0, 0, 0, 4, 0, 0, 0, 0, 0, 4],
-            [0, 0, 0, 0, 4, 4, 4, 4, 4, 4],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    # return [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 4, 4, 4, 4, 4, 4, 0, 0, 0],
+    #         [0, 4, 0, 0, 0, 0, 0, 4, 0, 0],
+    #         [0, 0, 4, 0, 0, 0, 0, 0, 4, 0],
+    #         [0, 0, 0, 4, 0, 0, 0, 0, 0, 4],
+    #         [0, 0, 0, 0, 4, 4, 4, 4, 4, 4],
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+    return [[0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8], 
+            [-1, 9, -1]]
+            
 
 def main():
     find_number_of_tasks()
