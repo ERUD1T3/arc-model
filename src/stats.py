@@ -1,13 +1,17 @@
 import json
+
 # import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 
-train_challenges_path = 'data/arc-agi_training_challenges.json'
-train_solutions_path = 'data/arc-agi_training_solutions.json'
-eval_challenges_path = 'data/arc-agi_evaluation_challenges.json'
-eval_solutions_path = 'data/arc-agi_evaluation_solutions.json'
-test_challenges_path = 'data/arc-agi_test_challenges.json'
+data_dir = '../data/'
+# set the paths to the datasets
+train_challenges_path = data_dir + 'arc-agi_training_challenges.json'
+train_solutions_path = data_dir + 'arc-agi_training_solutions.json'
+eval_challenges_path = data_dir + 'arc-agi_evaluation_challenges.json'
+eval_solutions_path = data_dir + 'arc-agi_evaluation_solutions.json'
+test_challenges_path = data_dir + 'arc-agi_test_challenges.json'
+
 
 def number_of_tasks(path):
     f = open(path)
@@ -30,7 +34,7 @@ def find_number_of_tasks():
 
 
 def get_grid_size(grid):
-    return (len(grid) * len(grid[0]), (len(grid), len(grid[0])) )
+    return (len(grid) * len(grid[0]), (len(grid), len(grid[0])))
 
 
 def find_max_min_grid(path):
@@ -69,22 +73,20 @@ def find_max_min_values(path):
             curr_max_out = max(max(sample['output']))
 
             temp_min = min(curr_min_in, curr_min_out)
-            temp_max = max(curr_max_in,curr_max_out)
+            temp_max = max(curr_max_in, curr_max_out)
 
             min_val = min(min_val, temp_min)
             max_val = max(max_val, temp_max)
-            
+
         if 'test' in task:
             for sample in task['test']:
                 curr_min_test = min(min(sample['input']))
                 curr_max_test = max(max(sample['input']))
-                
+
                 temp_min = min(temp_min, curr_min_test)
                 temp_max = max(temp_max, curr_max_test)
                 min_val = min(min_val, temp_min)
                 max_val = max(max_val, temp_max)
-
-
 
     print(f'Min value in dataset: {min_val}')
     print(f'Max value in dataset: {max_val}')
@@ -101,7 +103,7 @@ def draw_matrix(matrix):
         5: 'purple',
         6: 'magenta',
         7: 'orange',
-        8: 'cyan', #blue-light
+        8: 'cyan',  # blue-light
         9: 'maroon'
     }
 
@@ -110,8 +112,8 @@ def draw_matrix(matrix):
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
             color = colors.get(matrix[i][j], 'white')
-            rect = plt.Rectangle((j, len(matrix)-1-i), 1, 1,
-                                facecolor=color, edgecolor='gray')
+            rect = plt.Rectangle((j, len(matrix) - 1 - i), 1, 1,
+                                 facecolor=color, edgecolor='gray')
             ax.add_patch(rect)
 
     ax.set_xlim(0, len(matrix))
@@ -121,6 +123,7 @@ def draw_matrix(matrix):
 
     plt.show()
 
+
 def get_avg_number_examples(path):
     f = open(path)
     data = json.load(f)
@@ -129,17 +132,19 @@ def get_avg_number_examples(path):
     for task in data.values():
         examples.append(len(task['train']))
 
-    return sum(examples)/len(examples)
-    
+    return sum(examples) / len(examples)
+
+
 def find_avg_number_examples():
     avg_examp_train = get_avg_number_examples(train_challenges_path)
     avg_examp_eval = get_avg_number_examples(eval_challenges_path)
-    avg_examp_test = get_avg_number_examples (test_challenges_path)
+    avg_examp_test = get_avg_number_examples(test_challenges_path)
 
     print(f'Avg num example in training:      {avg_examp_train}')
     print(f'Avg num examples in evaluation:    {avg_examp_eval}')
     print(f'Avg num examples in test:          {avg_examp_test}')
     print()
+
 
 def draw_test():
     # example "025d127b" test set
@@ -156,9 +161,9 @@ def draw_test():
 
     return [[0, 1, 2],
             [3, 4, 5],
-            [6, 7, 8], 
+            [6, 7, 8],
             [-1, 9, -1]]
-            
+
 
 def main():
     find_number_of_tasks()
@@ -166,4 +171,6 @@ def main():
     find_max_min_values(eval_challenges_path)
     find_avg_number_examples()
     draw_matrix(draw_test())
+
+
 main()
