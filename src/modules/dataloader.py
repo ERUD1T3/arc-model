@@ -133,6 +133,9 @@ def task_info(*task_data: Tuple[str, Dict[str, Any], np.ndarray]) -> None:
     logging.info(f"y: {task_y.shape}")
 
 
+# TODO: a function to convert any size grid to 30x30 grid which is the max size in dataset
+
+
 def main() -> None:
     """
     Main function to load the data and log task information using a generator.
