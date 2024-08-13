@@ -1,36 +1,59 @@
 import json
+import logging
+from typing import Dict, Tuple, Any
 
-train_challenges_path = 'data/arc-agi_training_challenges.json'
-train_solutions_path = 'data/arc-agi_training_solutions.json'
-eval_challenges_path = 'data/arc-agi_evaluation_challenges.json'
-eval_solutions_path = 'data/arc-agi_evaluation_solutions.json'
-test_challenges_path = 'data/arc-agi_test_challenges.json'
+from shared.globals import TRAIN_CHLG_PATH, TRAIN_SOL_PATH
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def load_data(training_path, solution_path):
-    f_X = open(training_path)
-    f_y = open(solution_path)
+def load_data(chlg_path: str, sol_path: str) -> Dict[str, Tuple[Any, Any]]:
+    """
+    Load challenge and solution data from JSON files and return a dictionary
+    mapping task IDs to their respective features (X) and labels (y).
 
-    data_X = json.load(f_X)
-    data_y = json.load(f_y)
-    
+    :param chlg_path: str: Path to the training challenges JSON file.
+    :param sol_path: str: Path to the training solutions JSON file.
+    :return: Dict[str, Tuple[Any, Any]]: Dictionary mapping task IDs to features and labels.
+
+    """
+    # Open the JSON files and load the data
+    with open(chlg_path) as f_X, open(sol_path) as f_y:
+        data_X = json.load(f_X)
+        data_y = json.load(f_y)
+
+    # Initialize an empty dictionary to store the task data
     task_data = {}
 
+    # Iterate over each task in the training data
     for task_id, task_content in data_X.items():
+        task_X = task_content  # Features for the task
+        task_data[task_id] = (task_X, data_y[task_id])  # Pair features with their labels
 
-        task_X = task_content
-        task_data[task_id] = (task_X, data_y[task_id])
-    
     return task_data
 
-def main():
 
-    data = load_data(train_challenges_path, train_solutions_path)
+def main() -> None:
+    """
+    Main function to load the data and print task information using logging.
+    """
+    # Load the data from the specified paths
+    data = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
 
-    # for task_id, (X, y) in data.items():
-    #     print(f"Task ID: {task_id}")
-    #     print(f"Task X: {X}")
-    #     print(f"Task y: {y}")
-    #     return
+    # log the data
+    logging.info(f"Loaded {len(data)} tasks from {TRAIN_CHLG_PATH} and {TRAIN_SOL_PATH}")
+    logging.info(data)
 
-main()
+    # Log each task's ID, features (X), and labels (y)
+    for task_id, (X, y) in data.items():
+        logging.info(f"Task ID: {task_id}")
+        logging.info(f"Task X: {X}")
+        logging.info(f"Task y: {y}")
+        # Returning after the first task; remove return if you want to log all tasks
+        return
+
+
+# Execute the main function
+if __name__ == "__main__":
+    main()

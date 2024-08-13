@@ -1,0 +1,21 @@
+{
+    "task_id": {
+        "test": [
+            {
+                "input": 2D array of input data,
+            }
+        ],
+        "train": [
+            {
+                "input": 2D array of input data,
+                "output": 2D array of output data (corresponded output to input)
+            },
+            {
+                "input": 2D array of input data,
+                "output": 2D array of output data (corresponded output to input)
+            },
+            ... (may contain more train input output pairs)
+        ]
+    },
+    ... (may contain more tasks)
+}   
