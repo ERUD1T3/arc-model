@@ -145,7 +145,7 @@ def main() -> None:
     for task in ds:
         task_info(*task)
         # Process only one task for demonstration; remove this return statement to process all tasks
-        return
+
 
 
 # Execute the main function
