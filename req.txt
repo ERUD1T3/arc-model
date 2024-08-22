@@ -1,0 +1,14 @@
+Create a Conda Environment with Python 3.10:
+
+conda create -n tensorflow_env python=3.10
+conda activate tensorflow_env
+conda deactivate
+
+Install TensorFlow 2.10:
+conda install -c apple tensorflow-deps==2.10.0
+pip install tensorflow-macos==2.10.0
+
+To close Conda Enviroment
+conda deactivate
+
+OBS: If error running conda init on a zsh terminal, try running [conda init zsh]
