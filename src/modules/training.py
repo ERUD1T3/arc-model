@@ -22,7 +22,9 @@ y_train = []
 for d in train_data:
     curr_x, curr_y = d
     X_train.append(curr_x)
-    y_train.append(curr_y)
+    y_train.append(curr_y.flatten)
+
+print(np.array(X_train).shape)
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Input(shape=(3, 3)),
@@ -31,6 +33,6 @@ model = tf.keras.models.Sequential([
   tf.keras.layers.Dense(81)
 ])
 
-model.compile(optimizer='adam', loss='mse')
+# model.compile(optimizer='adam', loss='mse')
 
-model.fit(X_train, y_train, epochs=5)
+# model.fit(X_train, y_train, epochs=5)
