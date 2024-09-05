@@ -161,3 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 /.idea
+/src/notebooks/training_checkpoints
+*.data-00000-of-00001
+/src/notebooks/one_step
