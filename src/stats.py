@@ -124,25 +124,45 @@ def draw_matrix(matrix):
     plt.show()
 
 
-def get_avg_number_examples(path):
+def get_stats_number_examples(path):
     f = open(path)
     data = json.load(f)
 
     examples = []
+    
     for task in data.values():
-        examples.append(len(task['train']))
+        examples.append( len(task['train']) )
+        # print(f"len:{len(task['train'])}")
+        
+        
+    minimum = min(examples)
+    maximun = max(examples)
+    average = sum(examples) / len(examples)
 
-    return sum(examples) / len(examples)
+    return (minimum, maximun, average)
 
 
-def find_avg_number_examples():
-    avg_examp_train = get_avg_number_examples(train_challenges_path)
-    avg_examp_eval = get_avg_number_examples(eval_challenges_path)
-    avg_examp_test = get_avg_number_examples(test_challenges_path)
+def find_max_tasks(path, n):
+    f = open(path)
+    data = json.load(f)
 
-    print(f'Avg num example in training:      {avg_examp_train}')
-    print(f'Avg num examples in evaluation:    {avg_examp_eval}')
-    print(f'Avg num examples in test:          {avg_examp_test}')
+    max_tasks = []
+
+    for task_id in data:
+        for example in data[task_id]:
+            if example == 'train' and len(data[task_id][example]) == n:
+                max_tasks.append(task_id)
+    print(f"{path} {max_tasks}")
+        
+
+def find_examples_stats():
+    min_examp_train, max_examp_train, avg_examp_train = get_stats_number_examples(train_challenges_path)
+    min_examp_eval, max_examp_eval, avg_examp_eval = get_stats_number_examples(eval_challenges_path)
+    min_examp_test, max_examp_test, avg_examp_test = get_stats_number_examples(test_challenges_path)
+
+    print(f'Min/Max/Avg num example in training:      {min_examp_train} / {max_examp_train} / {avg_examp_train}')
+    print(f'Min/Max/Avg num examples in evaluation:    {min_examp_eval} / {max_examp_eval} / {avg_examp_eval}')
+    print(f'Min/Max/Avg num examples in test:          {min_examp_test} / {max_examp_test} / {avg_examp_test}')
     print()
 
 
@@ -166,11 +186,14 @@ def draw_test():
 
 
 def main():
-    find_number_of_tasks()
-    find_max_min_grid(eval_challenges_path)
-    find_max_min_values(eval_challenges_path)
-    find_avg_number_examples()
-    draw_matrix(draw_test())
+    # find_number_of_tasks()
+    # find_max_min_grid(eval_challenges_path)
+    # find_max_min_values(eval_challenges_path)
+    find_examples_stats()
+    find_max_tasks(train_challenges_path, 10)
+    find_max_tasks(eval_challenges_path, 7)
+    find_max_tasks(test_challenges_path, 8)
+    # draw_matrix(draw_test())
 
 
 main()
