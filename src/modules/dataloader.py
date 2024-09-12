@@ -147,7 +147,6 @@ def main() -> None:
         # Process only one task for demonstration; remove this return statement to process all tasks
 
 
-
 # Execute the main function
 if __name__ == "__main__":
     main()

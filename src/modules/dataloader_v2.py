@@ -1,7 +1,7 @@
 import numpy as np
 
 # Importing necessary functions from other modules for data loading and visualization
-from src.modules.dataloader import load_data, task_info, plot_grid
+from src.modules.dataloader import load_data
 from src.shared.globals import *
 
 
@@ -17,7 +17,7 @@ def generate_n_gram(X: list[np.ndarray], y: np.ndarray) -> list[np.ndarray]:
     n_gram = X.copy()  # Initialize n-grams with a copy of the input sequences
 
     for i in range(0, len(y)):
-        curr_cell = y[i] # current cell
+        curr_cell = y[i]  # current cell
         curr_sequence = np.append(n_gram[-1], curr_cell)
 
         n_gram.append(curr_sequence)
@@ -36,7 +36,7 @@ def convert_to_sequence(task_X: list) -> list[np.ndarray]:
     X = []
     for example in task_X:
         x, y = example  # Unpack the input and output arrays
-        
+
         x = x.reshape(-1)  # Flatten the input array
         y = y.reshape(-1)  # Flatten the output array
 
@@ -73,7 +73,7 @@ def test_n_gram(n_gram: list[np.ndarray]) -> None:
 
     print("\nExample # --> length/size \n---------------------------")
     for i in range(len(n_gram)):
-        print(f"Example {i + 1} --> ",len(n_gram[i]))
+        print(f"Example {i + 1} --> ", len(n_gram[i]))
 
 
 def main() -> None:
@@ -86,7 +86,6 @@ def main() -> None:
 
     # Iterate over each task
     for task in ds:
-
         # Extract task's: ID, X (train, test) and y (test solution) data
         task_id, task_X, task_y = task
 
