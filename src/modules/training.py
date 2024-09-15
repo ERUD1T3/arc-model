@@ -6,6 +6,10 @@ from src.shared.globals import *
 
 ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
 
+train_data = []
+test_data = []
+task_y = []
+
 # Extract/Split Training data and Testing data from each task
 for task in ds:
     task_id, task_X, task_y = task
@@ -24,7 +28,7 @@ for d in train_data:
     X_train.append(curr_x)
     y_train.append(curr_y.flatten)
 
-print(np.array(X_train).shape)
+    print(np.array(X_train).shape)
     X_train.append(curr_x.flatten())  # flatten to get same 1D shape matching input layer
     y_train.append(curr_y.flatten())  # flatten to get same 1D shape matching output layer
 
