@@ -332,16 +332,6 @@ def task_info(*task_data: Tuple[str, Dict[str, Any], np.ndarray]) -> None:
     logging.info(f"y: {task_y.shape}")
 
 
-# def main() -> None:
-#     """
-#     Main function to load the data and log task information using a generator.
-#     """
-#     # Load and log the data task by task
-#     ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
-#     for task in ds:
-#         task_info(*task)
-#         # Process only one task for demonstration; remove this return statement to process all tasks
-
 def main() -> None:
     """
     Main function to load the data and save token sequences to a file.
