@@ -5,7 +5,7 @@ from src.modules.dataloader import load_data
 from src.shared.globals import *
 
 
-def generate_n_gram(X: list[np.ndarray], y: np.ndarray) -> list[np.ndarray]:
+def generate_seq(X: list[np.ndarray], y: np.ndarray) -> list[np.ndarray]:
     """
     Generate n-grams by appending the current sequence of labels (y) to the existing
     list of input arrays (X). This helps in creating a sequence model input format.
@@ -14,14 +14,14 @@ def generate_n_gram(X: list[np.ndarray], y: np.ndarray) -> list[np.ndarray]:
     :param y: NumPy array of the target sequence (labels).
     :return: List of NumPy arrays where each entry is the concatenated sequence.
     """
-    n_gram = X.copy()  # Initialize n-grams with a copy of the input sequences
+    seq = X.copy()  # Initialize n-grams with a copy of the input sequences
 
     for i in range(0, len(y)):
         curr_cell = y[i]  # current cell
-        curr_sequence = np.append(n_gram[-1], curr_cell)
+        curr_sequence = np.append(seq[-1], curr_cell)
 
-        n_gram.append(curr_sequence)
-    return n_gram
+        seq.append(curr_sequence)
+    return seq
 
 
 def convert_to_sequence(task_X: list) -> list[np.ndarray]:
@@ -46,7 +46,7 @@ def convert_to_sequence(task_X: list) -> list[np.ndarray]:
     return X
 
 
-def test_n_gram(n_gram: list[np.ndarray]) -> None:
+def test_seq(seq: list[np.ndarray]) -> None:
     """
     Not sure ways to test, but here is something.
 
@@ -61,10 +61,10 @@ def test_n_gram(n_gram: list[np.ndarray]) -> None:
 
         - the length of n-gram should be (e + t + s), where:
                     "e" is the number of examples, "t" is the number of tests, and  "s" is the number of cells in solution.
-                    so, len(n_gram) = (e + t + s) = 5 + 1 + (9x9) = 87
+                    so, len(seq) = (e + t + s) = 5 + 1 + (9x9) = 87
 
         - when printing the length of example[from 1 to 5], it should give us a length of (3x3) + (9x9) = 90.
-        - when printing the length of example[from 6 to len(n_gram)], it should give us:
+        - when printing the length of example[from 6 to len(seq)], it should give us:
             - example[6] --> len(test). Because "test" was added at the end of X, after all examples.
             - example[7] --> len(example[6]) + 1. Because we start adding "y" (solution) cells one by one
             - example[8] --> len(example[7]) + 1.
@@ -72,8 +72,8 @@ def test_n_gram(n_gram: list[np.ndarray]) -> None:
     """
 
     print("\nExample # --> length/size \n---------------------------")
-    for i in range(len(n_gram)):
-        print(f"Example {i + 1} --> ", len(n_gram[i]))
+    for i in range(len(seq)):
+        print(f"Example {i + 1} --> ", len(seq[i]))
 
 
 def main() -> None:
@@ -102,9 +102,9 @@ def main() -> None:
         task_y = task_y.reshape(-1)
 
         # Generate n-grams from the training data and labels
-        n_grams = generate_n_gram(X, task_y)
+        seqs = generate_seq(X, task_y)
 
-        test_n_gram(n_grams)
+        test_seq(seqs)
         # task_info(task_id, task_X, task_y)
 
         return  # Remove this line to process all tasks
