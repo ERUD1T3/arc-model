@@ -164,3 +164,4 @@ cython_debug/
 /src/notebooks/training_checkpoints
 *.data-00000-of-00001
 /src/notebooks/one_step
+data/arc-agi_training_challenges_tok.csv

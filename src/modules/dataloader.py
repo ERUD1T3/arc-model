@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from typing import Dict, Tuple, Generator, Any, List
@@ -190,6 +191,59 @@ def task_training_seqs(task_X: Dict[str, any], task_y: np.ndarray) -> List[np.nd
     return sequences
 
 
+def add_suffix_to_filename(filename: str, suffix: str) -> str:
+    """
+    Adds a suffix before the file extension in a filename.
+
+    :param filename: str: The original filename.
+    :param suffix: str: The suffix to add.
+    :return: str: The new filename with the suffix added.
+    """
+    base, ext = os.path.splitext(filename)
+    return f"{base}{suffix}.csv"
+
+
+def save_token_sequences(ds: Generator[Tuple[str, Dict[str, Any], np.ndarray], None, None], output_path: str) -> None:
+    """
+    Generates token sequences from the dataset and saves them to a CSV file.
+
+    :param ds: Generator yielding task data.
+    :param output_path: str: Path to the output CSV file.
+    """
+
+    total_sequences = 0
+
+    # Open the CSV file for writing
+    with open(output_path, mode='w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+
+        # Write the header
+        csv_writer.writerow(['task_id', 'sequence_index', 'sequence_length', 'sequence'])
+
+        for task in ds:
+            task_id, task_X, task_y = task
+
+            # Generate the token sequences
+            sequences = task_training_seqs(task_X, task_y)
+
+            total_sequences += len(sequences)
+
+            # For each sequence, write a row to the CSV
+            for idx, seq in enumerate(sequences):
+                seq_length = len(seq)
+                seq_str = ' '.join(map(str, seq.tolist()))
+                csv_writer.writerow([task_id, idx, seq_length, seq_str])
+
+            # Log the number of sequences
+            logging.info(f"Task ID: {task_id}, Number of sequences: {len(sequences)}")
+
+        logging.info(f"Total sequences: {total_sequences}")
+
+    print(f"Token sequences saved to {output_path}")
+
+# TODO: apply BPE to the sequences
+
+
 def plot_grid(
         grid: np.ndarray,
         title: str = "Grid Plot",
@@ -278,15 +332,30 @@ def task_info(*task_data: Tuple[str, Dict[str, Any], np.ndarray]) -> None:
     logging.info(f"y: {task_y.shape}")
 
 
+# def main() -> None:
+#     """
+#     Main function to load the data and log task information using a generator.
+#     """
+#     # Load and log the data task by task
+#     ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
+#     for task in ds:
+#         task_info(*task)
+#         # Process only one task for demonstration; remove this return statement to process all tasks
+
 def main() -> None:
     """
-    Main function to load the data and log task information using a generator.
+    Main function to load the data and save token sequences to a file.
     """
-    # Load and log the data task by task
+    # Load the data
     ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
-    for task in ds:
-        task_info(*task)
-        # Process only one task for demonstration; remove this return statement to process all tasks
+    # for task in ds:
+    #     task_info(*task)
+    # Process only one task for demonstration; remove this return statement to process all tasks
+
+    # Create the new file name with "_tok" added
+    chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_tok')
+    # Save the token sequences to the new file
+    save_token_sequences(ds, chlg_tok_path)
 
 
 # Execute the main function
