@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Tuple, Generator, Any
+from typing import Dict, Tuple, Generator, Any, List
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -43,6 +43,151 @@ def load_data(chlg_path: str, sol_path: str) -> Generator[Tuple[str, Dict[str, n
 
         # Yield one task at a time
         yield task_id, task_X, task_y
+
+
+def tokenize_grid(grid: np.ndarray) -> np.ndarray:
+    """
+    Tokenizes a grid efficiently without adding an END_ROW after the last row.
+
+    :param grid: np.ndarray: A 2D NumPy array representing the grid.
+    :return: np.ndarray: A 1D NumPy array of tokens representing the grid.
+    """
+    num_rows, num_cols = grid.shape
+
+    # Ensure the grid is of integer type
+    grid_int = grid.astype(int)
+
+    # Flatten the grid to a 1D array
+    grid_flat = grid_int.flatten()
+
+    # Calculate positions where END_ROW tokens should be inserted (after each row except the last)
+    positions = np.arange(num_cols, num_rows * num_cols, num_cols)
+
+    # Insert END_ROW tokens at the calculated positions
+    tokens_body = np.insert(grid_flat, positions, END_ROW)
+
+    # Concatenate STR_GRID at the start and END_GRID at the end
+    tokens = np.concatenate(([STR_GRID], tokens_body, [END_GRID]))
+
+    return tokens
+
+
+def detokenize_grid(tokens: np.ndarray) -> np.ndarray:
+    """
+    Converts tokens back to a 2D grid efficiently.
+
+    :param tokens: np.ndarray: A 1D NumPy array of tokens representing the grid.
+    :return: np.ndarray: A 2D NumPy array representing the grid.
+    """
+    # Remove the STR_GRID and END_GRID tokens
+    tokens_body = tokens[1:-1]
+
+    # Find positions of END_ROW tokens
+    end_row_indices = np.where(tokens_body == END_ROW)[0]
+
+    # Prepare split indices for np.split (positions after which to split)
+    split_indices = end_row_indices + 1  # np.split splits at positions after the indices
+
+    # Split tokens_body into rows
+    rows = np.split(tokens_body, split_indices)
+
+    # Remove END_ROW tokens from each row
+    grid_rows = [row[row != END_ROW] for row in rows]
+
+    # Convert list of rows into a 2D NumPy array
+    grid = np.array(grid_rows, dtype=int)
+
+    return grid
+
+
+def tokenize_io_pair(X: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    """
+    Tokenizes an input-output pair efficiently
+
+    :param X: Tuple[np.ndarray, np.ndarray]: A tuple of 2D NumPy arrays representing the input and output grids.
+    :return: np.ndarray: A 1D NumPy array of tokens representing the input-output pair.
+    """
+    # Tokenize the input and output grids
+    tokens_in = tokenize_grid(X[0])
+    tokens_out = tokenize_grid(X[1])
+
+    # Concatenate STR_SEQ at the start and END_SEQ at the end
+    tokens = np.concatenate(([INPUT_IND], tokens_in, [OUTPUT_IND], tokens_out))
+
+    return tokens
+
+
+def tokenize_examples(examples: list[Tuple[np.ndarray, np.ndarray]]) -> np.ndarray:
+    """
+    Tokenizes a list of input-output examples efficiently.
+
+    :param examples: list[Tuple[np.ndarray, np.ndarray]]: A list of tuples of 2D NumPy arrays representing input-output pairs.
+    :return: np.ndarray: A 1D NumPy array of tokens representing the examples.
+    """
+    # Tokenize each input-output pair
+    tokens_list = [tokenize_io_pair(pair) for pair in examples]
+
+    # Concatenate STR_EXS at the start and END_EXS at the end
+    tokens = np.concatenate(([STR_EXS], *tokens_list, [END_EXS]))
+
+    return tokens
+
+
+def tokenize_task(task_X: Dict[str, any], task_y: np.ndarray) -> Tuple[np.ndarray, int]:
+    """
+    Tokenizes the features of a task efficiently.
+
+    :param task_X: Dict[str, np.ndarray]: A dictionary containing "train" and "test" data.
+        - "train" is a list of tuples of 2D NumPy arrays.
+        - "test" is a 2D NumPy array of query input data.
+    :param task_y: np.ndarray: A 2D NumPy array representing the solution/output data.
+    :return: np.ndarray: A 1D NumPy array of tokens representing the task features.
+            int: index where the solution starts in the tokens array.
+    """
+    # Tokenize the examples and test data
+    tokens_examples = tokenize_examples(task_X["train"])
+    tokens_query = tokenize_grid(task_X["test"])
+    tokens_sol = tokenize_grid(task_y)
+
+    # Concatenate the tokens
+    tokens = np.concatenate(([STR_SEQ], tokens_examples, [INPUT_IND], tokens_query, [OUTPUT_IND]))
+
+    # Calculate the index where the solution starts
+    sol_start = len(tokens)
+
+    # Concatenate the solution tokens
+    tokens = np.concatenate((tokens, tokens_sol, [END_SEQ]))
+
+    return tokens, sol_start
+
+
+def task_training_seqs(task_X: Dict[str, any], task_y: np.ndarray) -> List[np.ndarray]:
+    """
+    Create autoregressive training sequences for a task, where each sequence adds one more token
+    from the solution for training an autoregressive model.
+
+    :param task_X: Dict[str, any]: A dictionary containing "train" and "test" data.
+        - "train" is a list of tuples of 2D NumPy arrays (input and output grids).
+        - "test" is a 2D NumPy array of query input data.
+    :param task_y: np.ndarray: A 2D NumPy array representing the solution/output grid.
+    :return: List[np.ndarray]: A list of NumPy arrays where each array is a training sequence.
+    """
+    # Tokenize the task features and get the index where the solution starts
+    tokens, sol_start = tokenize_task(task_X, task_y)
+
+    # Initialize the list of training sequences
+    sequences = []
+
+    # Get the total number of tokens
+    total_tokens = len(tokens)
+
+    # Generate sequences by adding one token from the solution at a time
+    for i in range(sol_start + 1, total_tokens + 1):
+        # Include the tokens up to the current token in the solution
+        seq = tokens[:i]
+        sequences.append(seq)
+
+    return sequences
 
 
 def plot_grid(
@@ -131,7 +276,6 @@ def task_info(*task_data: Tuple[str, Dict[str, Any], np.ndarray]) -> None:
 
     # Log the shape of the expected output
     logging.info(f"y: {task_y.shape}")
-
 
 
 def main() -> None:
