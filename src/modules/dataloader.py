@@ -243,55 +243,34 @@ def save_token_sequences(ds: Generator[Tuple[str, Dict[str, Any], np.ndarray], N
     print(f"Token sequences saved to {output_path}")
 
 
-# def merge_pair_in_sequences(sequences: List[List[int]], pair_to_merge: Tuple[int, int], new_token: int) -> List[
-#     List[int]]:
-#     """
-#     Merges the specified pair in all sequences by replacing occurrences with the new token.
-#
-#     :param sequences: List of token sequences.
-#     :param pair_to_merge: Tuple representing the token pair to merge.
-#     :param new_token: The new token representing the merged pair.
-#     :return: Updated list of token sequences.
-#     """
-#     new_sequences = []
-#     for seq in sequences:
-#         i = 0
-#         new_seq = []
-#         while i < len(seq):
-#             if i < len(seq) - 1 and (seq[i], seq[i + 1]) == pair_to_merge:
-#                 new_seq.append(new_token)
-#                 i += 2  # Skip the next token since we've merged it
-#             else:
-#                 new_seq.append(seq[i])
-#                 i += 1
-#         new_sequences.append(new_seq)
-#     return new_sequences
-
-def merge_pair_in_sequences(sequences: List[List[int]], pair_to_merge: Tuple[int, int], new_token: int) -> List[
-    List[int]]:
+def merge_pair_in_sequences(
+        sequences: List[List[int]], pair_to_merge: Tuple[int, int], new_token: int
+) -> List[List[int]]:
     """
-    Merges the specified pair in all sequences by replacing occurrences with the new token efficiently.
-    NOTE: only works with integer tokens
+    Merges the specified pair in all sequences by replacing occurrences with the new token.
 
     :param sequences: List of token sequences.
     :param pair_to_merge: Tuple representing the token pair to merge.
     :param new_token: The new token representing the merged pair.
     :return: Updated list of token sequences.
     """
-    # Convert the pair to merge into a string
-    pair_str = ','.join(map(str, pair_to_merge))
-    new_token_str = str(new_token)
     new_sequences = []
-
     for seq in sequences:
-        # Convert the sequence into a comma-separated string
-        seq_str = ','.join(map(str, seq))
-        # Replace all occurrences of the pair with the new token string
-        seq_str = seq_str.replace(pair_str, new_token_str)
-        # Split the string back into tokens and convert to integers
-        new_seq = list(map(int, seq_str.split(',')))
+        i = 0
+        new_seq = []
+        while i < len(seq):
+            if (
+                    i < len(seq) - 1
+                    and seq[i] == pair_to_merge[0]
+                    and seq[i + 1] == pair_to_merge[1]
+            ):
+                # Merge the pair
+                new_seq.append(new_token)
+                i += 2  # Skip the next token
+            else:
+                new_seq.append(seq[i])
+                i += 1
         new_sequences.append(new_seq)
-
     return new_sequences
 
 
@@ -358,7 +337,13 @@ def apply_bpe(sequences: List[np.ndarray], vocab_size: int, initial_vocab: Dict[
     :return: Tuple of updated sequences and the updated vocabulary.
     """
     vocab = initial_vocab.copy()
-    current_vocab_size = max(vocab.keys()) + 1  # Next available token index
+    # log the initial vocab
+    logging.info(f"Initial vocabulary: {vocab}")
+    # log the initial vocab size and max token
+    logging.info(f"Initial vocab size: {len(vocab)}")
+    max_token = max(vocab.keys())
+    logging.info(f"Max token: {max_token}")
+    current_vocab_size = int(max_token) + 1  # Next available token index
 
     while current_vocab_size < vocab_size:
         # Count the frequencies of token pairs
@@ -373,6 +358,8 @@ def apply_bpe(sequences: List[np.ndarray], vocab_size: int, initial_vocab: Dict[
         # Assign a new token to this pair
         new_token = current_vocab_size
         current_vocab_size += 1
+        # log the new token
+        logging.info(f"New produced token: {new_token}")
 
         # Merge the pair in all sequences
         sequences = merge_pair_in_sequences(sequences, most_freq_pair, new_token)
@@ -571,7 +558,7 @@ def main() -> None:
     chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_bpe')
 
     # Set the desired vocabulary size
-    desired_vocab_size = 2000  # Adjust as needed
+    desired_vocab_size = 2048  # Adjust as needed
 
     # Save the token sequences with BPE applied
     save_token_sequences_with_bpe(ds, chlg_tok_path, desired_vocab_size)
