@@ -319,7 +319,32 @@ def update_vocab(vocab: Dict[int, Any], pair_to_merge: Tuple[int, int], new_toke
     :param pair_to_merge: The pair being merged.
     :param new_token: The new token representing the merged pair.
     """
-    vocab[new_token] = pair_to_merge  # Map new token to the pair it represents
+    # Ensure pair elements are native Python ints
+    pair_to_merge = (int(pair_to_merge[0]), int(pair_to_merge[1]))
+    vocab[int(new_token)] = pair_to_merge  # Map new token to the pair it represents
+
+
+def convert_numpy_types(obj):
+    """
+    Recursively converts numpy types to native Python types in the given object.
+
+    :param obj: The object to convert.
+    :return: The object with numpy types converted to native Python types.
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, tuple):
+        return tuple(convert_numpy_types(e) for e in obj)
+    elif isinstance(obj, list):
+        return [convert_numpy_types(e) for e in obj]
+    elif isinstance(obj, dict):
+        return {str(k): convert_numpy_types(v) for k, v in obj.items()}
+    else:
+        return obj
 
 
 def apply_bpe(sequences: List[np.ndarray], vocab_size: int, initial_vocab: Dict[int, Any]) -> Tuple[
@@ -428,8 +453,8 @@ def save_token_sequences_with_bpe(ds: Generator[Tuple[str, Dict[str, Any], np.nd
     # Save the final vocabulary to a JSON file
     vocab_output_path = os.path.splitext(output_path)[0] + '_vocab.json'
     with open(vocab_output_path, 'w') as f:
-        # Since vocab keys are integers, we need to convert them to strings for JSON
-        json_vocab = {str(k): v for k, v in final_vocab.items()}
+        # Convert the entire vocabulary to native Python types
+        json_vocab = {str(k): convert_numpy_types(v) for k, v in final_vocab.items()}
         json.dump(json_vocab, f)
 
     logging.info(f"Token sequences saved to {output_path}")
@@ -546,7 +571,7 @@ def main() -> None:
     chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_bpe')
 
     # Set the desired vocabulary size
-    desired_vocab_size = 500  # Adjust as needed
+    desired_vocab_size = 2000  # Adjust as needed
 
     # Save the token sequences with BPE applied
     save_token_sequences_with_bpe(ds, chlg_tok_path, desired_vocab_size)
