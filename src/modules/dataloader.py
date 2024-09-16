@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+from collections import Counter
 from typing import Dict, Tuple, Generator, Any, List
 
 import matplotlib.colors as mcolors
@@ -241,7 +242,198 @@ def save_token_sequences(ds: Generator[Tuple[str, Dict[str, Any], np.ndarray], N
 
     print(f"Token sequences saved to {output_path}")
 
-# TODO: apply BPE to the sequences
+
+# def merge_pair_in_sequences(sequences: List[List[int]], pair_to_merge: Tuple[int, int], new_token: int) -> List[
+#     List[int]]:
+#     """
+#     Merges the specified pair in all sequences by replacing occurrences with the new token.
+#
+#     :param sequences: List of token sequences.
+#     :param pair_to_merge: Tuple representing the token pair to merge.
+#     :param new_token: The new token representing the merged pair.
+#     :return: Updated list of token sequences.
+#     """
+#     new_sequences = []
+#     for seq in sequences:
+#         i = 0
+#         new_seq = []
+#         while i < len(seq):
+#             if i < len(seq) - 1 and (seq[i], seq[i + 1]) == pair_to_merge:
+#                 new_seq.append(new_token)
+#                 i += 2  # Skip the next token since we've merged it
+#             else:
+#                 new_seq.append(seq[i])
+#                 i += 1
+#         new_sequences.append(new_seq)
+#     return new_sequences
+
+def merge_pair_in_sequences(sequences: List[List[int]], pair_to_merge: Tuple[int, int], new_token: int) -> List[
+    List[int]]:
+    """
+    Merges the specified pair in all sequences by replacing occurrences with the new token efficiently.
+    NOTE: only works with integer tokens
+
+    :param sequences: List of token sequences.
+    :param pair_to_merge: Tuple representing the token pair to merge.
+    :param new_token: The new token representing the merged pair.
+    :return: Updated list of token sequences.
+    """
+    # Convert the pair to merge into a string
+    pair_str = ','.join(map(str, pair_to_merge))
+    new_token_str = str(new_token)
+    new_sequences = []
+
+    for seq in sequences:
+        # Convert the sequence into a comma-separated string
+        seq_str = ','.join(map(str, seq))
+        # Replace all occurrences of the pair with the new token string
+        seq_str = seq_str.replace(pair_str, new_token_str)
+        # Split the string back into tokens and convert to integers
+        new_seq = list(map(int, seq_str.split(',')))
+        new_sequences.append(new_seq)
+
+    return new_sequences
+
+
+def get_pair_frequencies(sequences: List[List[int]]) -> Dict[Tuple[int, int], int]:
+    """
+    Counts the frequency of each pair of consecutive tokens in the sequences efficiently.
+
+    :param sequences: List of token sequences.
+    :return: Dictionary with token pairs as keys and their frequencies as values.
+    """
+    pair_freqs = Counter()
+    for seq in sequences:
+        # Use zip to create pairs of consecutive tokens
+        pairs = zip(seq, seq[1:])
+        # Update the Counter with the pairs
+        pair_freqs.update(pairs)
+    return pair_freqs
+
+
+def update_vocab(vocab: Dict[int, Any], pair_to_merge: Tuple[int, int], new_token: int) -> None:
+    """
+    Updates the vocabulary with the new token representing the merged pair.
+
+    :param vocab: The current vocabulary.
+    :param pair_to_merge: The pair being merged.
+    :param new_token: The new token representing the merged pair.
+    """
+    vocab[new_token] = pair_to_merge  # Map new token to the pair it represents
+
+
+def apply_bpe(sequences: List[np.ndarray], vocab_size: int, initial_vocab: Dict[int, Any]) -> Tuple[
+    List[List[int]], Dict[int, Any]]:
+    """
+    Applies BPE to the sequences to increase vocabulary size up to vocab_size.
+
+    :param sequences: List of token sequences.
+    :param vocab_size: Desired vocabulary size.
+    :param initial_vocab: The initial vocabulary mapping.
+    :return: Tuple of updated sequences and the updated vocabulary.
+    """
+    vocab = initial_vocab.copy()
+    current_vocab_size = max(vocab.keys()) + 1  # Next available token index
+
+    while current_vocab_size < vocab_size:
+        # Count the frequencies of token pairs
+        pair_freqs = get_pair_frequencies(sequences)
+        if not pair_freqs:
+            break  # No more pairs to merge
+
+        # Find the most frequent pair
+        most_freq_pair = max(pair_freqs, key=pair_freqs.get)
+        logging.info(f"Merging pair {most_freq_pair} with frequency {pair_freqs[most_freq_pair]}")
+
+        # Assign a new token to this pair
+        new_token = current_vocab_size
+        current_vocab_size += 1
+
+        # Merge the pair in all sequences
+        sequences = merge_pair_in_sequences(sequences, most_freq_pair, new_token)
+
+        # Update the vocabulary
+        update_vocab(vocab, most_freq_pair, new_token)
+
+    return sequences, vocab
+
+
+def save_token_sequences_with_bpe(ds: Generator[Tuple[str, Dict[str, Any], np.ndarray], None, None], output_path: str,
+                                  vocab_size: int) -> None:
+    """
+    Generates token sequences from the dataset, applies BPE, and saves them to a CSV file.
+
+    :param ds: Generator yielding task data.
+    :param output_path: str: Path to the output CSV file.
+    :param vocab_size: int: Desired vocabulary size after BPE.
+    """
+
+    # Initial vocabulary: mapping from tokens to their string representations (for clarity)
+    initial_vocab = {i: color for i, color in enumerate(COLORS)}
+    special_tokens = {
+        END_ROW: 'END_ROW',
+        STR_GRID: 'STR_GRID',
+        END_GRID: 'END_GRID',
+        STR_SEQ: 'STR_SEQ',
+        END_SEQ: 'END_SEQ',
+        INPUT_IND: 'INPUT_IND',
+        OUTPUT_IND: 'OUTPUT_IND',
+        STR_EXS: 'STR_EXS',
+        END_EXS: 'END_EXS',
+        PAD: 'PAD'
+    }
+    initial_vocab.update(special_tokens)
+
+    # Collect all sequences
+    all_sequences = []
+    task_sequence_indices = []  # Keep track of sequences per task
+    task_ids = []
+
+    for task in ds:
+        task_id, task_X, task_y = task
+
+        # Generate the token sequences
+        sequences = task_training_seqs(task_X, task_y)
+
+        # Keep track of indices
+        start_idx = len(all_sequences)
+        all_sequences.extend(sequences)
+        end_idx = len(all_sequences)
+        task_sequence_indices.append((task_id, start_idx, end_idx))
+        task_ids.append(task_id)
+
+        # Log the number of sequences
+        logging.info(f"Task ID: {task_id}, Number of sequences: {len(sequences)}")
+
+    # Log the total number of sequences
+    logging.info(f"Total sequences: {len(all_sequences)}")
+
+    # Apply BPE to all sequences
+    sequences_after_bpe, final_vocab = apply_bpe(all_sequences, vocab_size, initial_vocab)
+
+    # Save the sequences to CSV
+    with open(output_path, mode='w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        # Write the header
+        csv_writer.writerow(['task_id', 'sequence_index', 'sequence_length', 'sequence'])
+
+        for task_id, start_idx, end_idx in task_sequence_indices:
+            for idx in range(start_idx, end_idx):
+                seq = sequences_after_bpe[idx]
+                seq_length = len(seq)
+                seq_str = ' '.join(map(str, seq))
+                sequence_index = idx - start_idx  # Index within the task
+                csv_writer.writerow([task_id, sequence_index, seq_length, seq_str])
+
+    # Save the final vocabulary to a JSON file
+    vocab_output_path = os.path.splitext(output_path)[0] + '_vocab.json'
+    with open(vocab_output_path, 'w') as f:
+        # Since vocab keys are integers, we need to convert them to strings for JSON
+        json_vocab = {str(k): v for k, v in final_vocab.items()}
+        json.dump(json_vocab, f)
+
+    logging.info(f"Token sequences saved to {output_path}")
+    logging.info(f"Final vocabulary saved to {vocab_output_path}")
 
 
 def plot_grid(
@@ -336,16 +528,28 @@ def main() -> None:
     """
     Main function to load the data and save token sequences to a file.
     """
+    # # Load the data
+    # ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
+    # # for task in ds:
+    # #     task_info(*task)
+    # # Process only one task for demonstration; remove this return statement to process all tasks
+    #
+    # # Create the new file name with "_tok" added
+    # chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_tok')
+    # # Save the token sequences to the new file
+    # save_token_sequences(ds, chlg_tok_path)
+
     # Load the data
     ds = load_data(TRAIN_CHLG_PATH, TRAIN_SOL_PATH)
-    # for task in ds:
-    #     task_info(*task)
-    # Process only one task for demonstration; remove this return statement to process all tasks
 
-    # Create the new file name with "_tok" added
-    chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_tok')
-    # Save the token sequences to the new file
-    save_token_sequences(ds, chlg_tok_path)
+    # Create the new file name with "_bpe" added
+    chlg_tok_path = add_suffix_to_filename(TRAIN_CHLG_PATH, '_bpe')
+
+    # Set the desired vocabulary size
+    desired_vocab_size = 500  # Adjust as needed
+
+    # Save the token sequences with BPE applied
+    save_token_sequences_with_bpe(ds, chlg_tok_path, desired_vocab_size)
 
 
 # Execute the main function
