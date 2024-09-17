@@ -166,3 +166,4 @@ cython_debug/
 /src/notebooks/one_step
 data/arc-agi_training_challenges_tok.csv
 data/bpe2048/arc-agi_training_challenges_bpe.csv
+data/arc-agi_training_challenges_bpe.csv
