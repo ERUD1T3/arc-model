@@ -24,7 +24,11 @@ STR_EXS = N_COLORS + 7  # start of examples
 END_EXS = N_COLORS + 8  # end of examples
 PAD = N_COLORS + 9  # padding
 VOCAB = COLORS + [END_ROW, STR_GRID, END_GRID, STR_SEQ, END_SEQ, INPUT_IND, OUTPUT_IND, STR_EXS, END_EXS, PAD]
-VOCAB_SIZE = len(VOCAB)
+INIT_VOCAB_SIZE = len(VOCAB)
+# data/bpe2048/arc-agi_training_challenges_bpe_vocab.json
+VOCAB_SIZE = 2048
+SEQ_LEN = 1500  # maximum sequence length with above vocab (
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
